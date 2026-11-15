@@ -1,0 +1,10 @@
+'use strict';
+let pin=(params.get('pin')||'').replace(/\D/g,''),current=null,joined=false;
+qs('#pinInput').value=pin;
+function enter(){pin=qs('#pinInput').value.trim();if(!/^\d{6}$/.test(pin)){qs('#error').textContent='Mã phòng gồm 6 chữ số';qs('#error').style.display='block';return}joined=true;emit({type:'watch',pin})}
+qs('#enterBtn').onclick=enter;
+onOpen=()=>{if(joined)emit({type:'watch',pin})};
+onEvent=msg=>{if(msg.type==='error'){qs('#error').textContent=msg.message;qs('#error').style.display='block';return}if(msg.type==='state'){current=msg;qs('#enter').classList.add('hidden');qs('#display').classList.remove('hidden');render()}};
+function render(){const s=current,q=s.q;qs('#pin').textContent='MÃ PHÒNG '+s.pin;qs('#count').textContent=s.count+' sĩ tử';qs('#round').textContent=`Câu ${s.idx+1}`;qs('#stage').textContent=q?stageNames[q.stage]:'TRƯỜNG THI KHOA BẢNG';qs('#landscape').innerHTML=sceneMarkup(q?.stage||0);qs('#qcount').textContent=q?`CÂU ${q.index}/${q.total}`:'ĐÓN SĨ TỬ';qs('#phase').textContent=s.phase==='running'?'ĐANG THI':s.phase==='reveal'?'CÔNG BỐ ĐÁP ÁN':s.phase==='finished'?'VINH QUY BÁI TỔ':'CHỜ MỞ CÂU';qs('#timer').textContent=s.phase==='running'?timeLeft(q):q?.t||'--';qs('#question').textContent=s.phase==='finished'?'XƯỚNG DANH TAM KHÔI':q?q.q:'Quan trường đang chuẩn bị kỳ thi';qs('#choices').innerHTML=q&&s.phase!=='finished'?q.a.map((x,i)=>`<div class="choice ${s.phase==='reveal'&&i===q.answer?'correct':''}"><b>${'ABCD'[i]}.</b> ${escapeHtml(x)}</div>`).join(''):'';qs('#note').textContent=s.phase==='reveal'?`✅ Đáp án đúng: ${'ABCD'[q.answer]} · ${q.a[q.answer]}`:s.phase==='running'?'⏳ Sĩ tử đang làm bài':'📯 Chờ hiệu lệnh quan trường';qs('#leaders').innerHTML=renderRanks(s.leaderboard,10);qs('#standings').style.display=(s.phase==='reveal'||s.phase==='finished')?'block':'none';qs('#top10').innerHTML=renderRanks(s.leaderboard,10);qs('#joinUrl').textContent=location.origin+'/join?pin='+s.pin}
+setInterval(()=>{if(current?.phase==='running'&&current.q){const s=timeLeft(current.q);qs('#timer').textContent=s;qs('#timer').classList.toggle('hot',s<=5)}},170);
+connect();if(pin)enter();

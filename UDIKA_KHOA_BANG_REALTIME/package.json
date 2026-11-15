@@ -1,0 +1,9 @@
+{
+  "name": "udika-khoa-bang-realtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "UDIKA Trường thi Khoa Bảng - realtime multiplayer pilot",
+  "type": "commonjs",
+  "scripts": {"start": "node server.js", "test": "node test/smoke.js"},
+  "engines": {"node": ">=20"}
+}

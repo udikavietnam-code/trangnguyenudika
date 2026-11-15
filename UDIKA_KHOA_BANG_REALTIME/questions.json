@@ -1,0 +1,182 @@
+[
+  {
+    "stage": 0,
+    "q": "Khi bắt đầu một bài học, điều quan trọng nhất là gì?",
+    "a": [
+      "Chăm chú lắng nghe",
+      "Nói chuyện riêng",
+      "Rời khỏi lớp",
+      "Làm việc khác"
+    ],
+    "c": 0,
+    "t": 15
+  },
+  {
+    "stage": 0,
+    "q": "Trong bộ đồ dùng của thầy đồ xưa, nghiên mực dùng để làm gì?",
+    "a": [
+      "Đựng nước uống",
+      "Mài mực viết chữ",
+      "Đựng hạt giống",
+      "Đốt hương"
+    ],
+    "c": 1,
+    "t": 20
+  },
+  {
+    "stage": 0,
+    "q": "Từ nào đồng nghĩa gần nhất với “hiếu học”?",
+    "a": [
+      "Lười nhác",
+      "Ham học hỏi",
+      "Bất cẩn",
+      "Nóng vội"
+    ],
+    "c": 1,
+    "t": 15
+  },
+  {
+    "stage": 1,
+    "q": "Dãy số 2, 4, 8, 16, ... có số tiếp theo là bao nhiêu?",
+    "a": [
+      "18",
+      "24",
+      "32",
+      "36"
+    ],
+    "c": 2,
+    "t": 15
+  },
+  {
+    "stage": 1,
+    "q": "Nếu hôm nay là thứ Hai, 10 ngày sau là thứ mấy?",
+    "a": [
+      "Thứ Ba",
+      "Thứ Tư",
+      "Thứ Năm",
+      "Thứ Sáu"
+    ],
+    "c": 2,
+    "t": 20
+  },
+  {
+    "stage": 1,
+    "q": "Chọn từ viết đúng chính tả.",
+    "a": [
+      "Sĩ tử",
+      "Sỹ tữ",
+      "Sĩ tữ",
+      "Sỹ tử"
+    ],
+    "c": 0,
+    "t": 10
+  },
+  {
+    "stage": 2,
+    "q": "Kỳ thi nào trong khoa cử phong kiến được tổ chức tại các trường thi địa phương?",
+    "a": [
+      "Thi Đình",
+      "Thi Hương",
+      "Thi Hội",
+      "Thi vấn đáp"
+    ],
+    "c": 1,
+    "t": 20
+  },
+  {
+    "stage": 2,
+    "q": "Người đỗ đầu kỳ thi Hương thường được gọi là gì?",
+    "a": [
+      "Hội nguyên",
+      "Trạng nguyên",
+      "Giải nguyên",
+      "Thám hoa"
+    ],
+    "c": 2,
+    "t": 20
+  },
+  {
+    "stage": 2,
+    "q": "Vật dụng thường gắn với sĩ tử đến trường thi xưa là gì?",
+    "a": [
+      "Lều chõng",
+      "Máy tính",
+      "Bảng điện tử",
+      "Loa phát thanh"
+    ],
+    "c": 0,
+    "t": 15
+  },
+  {
+    "stage": 3,
+    "q": "Kỳ thi Hội trong khoa cử truyền thống thường diễn ra tại đâu?",
+    "a": [
+      "Kinh đô",
+      "Mỗi làng xã",
+      "Từng gia đình",
+      "Trên thuyền"
+    ],
+    "c": 0,
+    "t": 20
+  },
+  {
+    "stage": 3,
+    "q": "Người đỗ đầu kỳ thi Hội được gọi là gì?",
+    "a": [
+      "Giải nguyên",
+      "Hội nguyên",
+      "Thám hoa",
+      "Tú tài"
+    ],
+    "c": 1,
+    "t": 15
+  },
+  {
+    "stage": 3,
+    "q": "Nếu một câu hỏi 30 giây, trả lời đúng sau 6 giây thì còn bao nhiêu giây?",
+    "a": [
+      "18",
+      "20",
+      "24",
+      "26"
+    ],
+    "c": 2,
+    "t": 30
+  },
+  {
+    "stage": 4,
+    "q": "Trong hệ thống Tam khôi thời Lê, danh hiệu nào đứng đầu?",
+    "a": [
+      "Bảng nhãn",
+      "Trạng nguyên",
+      "Thám hoa",
+      "Hoàng giáp"
+    ],
+    "c": 1,
+    "t": 20
+  },
+  {
+    "stage": 4,
+    "q": "Đứng thứ hai trong Tam khôi là danh hiệu nào?",
+    "a": [
+      "Bảng nhãn",
+      "Giải nguyên",
+      "Hội nguyên",
+      "Sinh đồ"
+    ],
+    "c": 0,
+    "t": 15
+  },
+  {
+    "stage": 4,
+    "q": "Danh hiệu nào dành cho người đứng thứ ba trong Tam khôi?",
+    "a": [
+      "Tú tài",
+      "Cử nhân",
+      "Thám hoa",
+      "Hương cống"
+    ],
+    "c": 2,
+    "t": 15
+  }
+]
