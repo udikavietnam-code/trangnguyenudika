@@ -11,3 +11,25 @@
 @keyframes honorRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 .personal-honor{text-align:center;background:linear-gradient(#fff1d1,#ecd097);border:3px double #a9773c;border-radius:18px;padding:20px;color:#552e1e;margin:15px 0;line-height:1.6}.personal-med{font-size:48px}.personal-main{font-size:14px;font-weight:800}.personal-title{font:800 21px Georgia,serif;color:#94332a;margin:10px 0}.personal-footer{font-size:11px;letter-spacing:.5px;margin-top:14px;color:#724329}
 @media(max-width:800px){.honor-podium{grid-template-columns:1fr;align-items:stretch}.honor-card.champion{order:-1}.honor-card,.honor-card.champion{min-height:unset;padding:15px}.final-ceremony{padding:16px}.ceremony-title{font-size:29px}}
+
+/* UDIKA V4: heritage-style, full-stage celebration with artwork and clear LED hierarchy */
+.stage-ceremony{position:relative;margin:18px 0 14px;border:6px solid #a77b36;border-radius:22px;min-height:580px;overflow:hidden;background:#e9c98f url('/vinh_danh_bg.webp') center/cover no-repeat;box-shadow:0 25px 55px #0009;isolation:isolate}
+.stage-ceremony:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(43,28,15,.16),transparent 28%,transparent 72%,rgba(43,28,15,.16));pointer-events:none}
+.stage-ceremony-inner{position:relative;min-height:570px;padding:24px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.stage-logo{color:#f7d58a;font:900 24px Georgia,serif;text-shadow:0 3px 4px #24130a;background:#7f3328;padding:8px 26px;border:2px solid #e4b95e;border-radius:15px;box-shadow:0 6px 18px #0004}
+.stage-logo span{color:#fff1d1;font:700 11px Arial,sans-serif;letter-spacing:3px;margin-left:10px}
+.stage-kicker{font:800 12px Arial,sans-serif;letter-spacing:2px;color:#a5782a;text-align:center}
+.stage-scroll{background:linear-gradient(180deg,rgba(255,248,223,.98),rgba(239,217,165,.98));padding:24px 32px 28px;width:min(760px,94%);text-align:center;border:6px double #ae752e;border-radius:30px;box-shadow:0 20px 35px #3f24128a, inset 0 2px 8px #fff7;animation:ceremonyIn .65s both}
+.stage-scroll h2{font:900 clamp(26px,3.6vw,48px) Georgia,serif;color:#953426;margin:12px 0;line-height:1.22;text-shadow:0 2px #f5dfb0}
+.stage-scroll p{font:600 clamp(16px,1.6vw,22px) Georgia,serif;color:#654127;margin:8px 0 20px;line-height:1.5}
+.stage-top{border-top:2px solid #cf9d50;padding-top:12px}
+.stage-top-title{font:bold 15px Georgia,serif;color:#7f3825;margin-bottom:12px;letter-spacing:.5px}
+.stage-leader{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;text-align:left;background:#fff4d5e5;border:1px solid #d8b679;padding:9px 13px;border-radius:12px;margin:5px auto;color:#59321e;max-width:650px}
+.stage-leader span{font-weight:800;white-space:normal;overflow-wrap:anywhere}.stage-leader strong{color:#9f3824}
+.stage-next{font:700 12px Arial,sans-serif;color:#794627;letter-spacing:.2px;line-height:1.5;padding-top:12px}
+@keyframes ceremonyIn{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.final-ceremony{background:linear-gradient(135deg,rgba(45,18,11,.76),rgba(54,29,18,.82)),url('/vinh_danh_bg.webp') center/cover no-repeat;border:7px double #e5bc67;box-shadow:0 25px 60px #0009}
+.final-ceremony .ceremony-title{color:#ffe5a4;text-shadow:0 3px 6px #31170e}
+.honor-card{border-radius:22px;border:3px solid #c49b4d;box-shadow:0 14px 34px #21140788}
+.honor-card.champion{box-shadow:0 0 25px #edc67966,0 25px 40px #120e0a99}
+@media(max-width:800px){.stage-ceremony{min-height:450px}.stage-ceremony-inner{min-height:445px;padding:15px 5px}.stage-scroll{padding:18px 12px}.stage-scroll h2{font-size:26px}.stage-leader{grid-template-columns:25px 1fr auto;gap:5px;padding:7px}.stage-leader strong{font-size:12px}.stage-logo{font-size:18px}.stage-next{font-size:11px}}

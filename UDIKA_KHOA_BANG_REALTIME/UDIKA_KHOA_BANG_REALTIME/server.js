@@ -9,6 +9,11 @@ const { URL } = require('node:url');
 const PORT = Number(process.env.PORT || 3000);
 const HOST = '0.0.0.0';
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname,'data','rooms.json');
+const REQUIRE_DATABASE = process.env.REQUIRE_DATABASE === 'true';
+if (REQUIRE_DATABASE && !process.env.DATABASE_URL) {
+ console.error('DATABASE_URL is required when REQUIRE_DATABASE=true. No temporary-file fallback allowed.');
+ process.exit(1);
+}
 const publicDir = path.join(__dirname,'public');
 const MAX_ROOMS = Number(process.env.MAX_ROOMS || 30);
 const MAX_PLAYERS = Number(process.env.MAX_PLAYERS || 300); // safety default for pilot; NOT a throughput guarantee
@@ -49,23 +54,40 @@ function serialize(){return Array.from(rooms.values()).map(r=>({pin:r.pin,hostKe
 let saveTimer;
 const db=process.env.DATABASE_URL?new (require('pg').Pool)({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_SSL==='require'?{rejectUnauthorized:false}:undefined,max:4}):null;
 let saving=Promise.resolve();
-async function persistNow(){const payload=serialize();if(db){saving=saving.then(()=>db.query('INSERT INTO udika_snapshot (id,payload,updated_at) VALUES (1,$1,NOW()) ON CONFLICT (id) DO UPDATE SET payload=$1,updated_at=NOW()', [JSON.stringify(payload)])).catch(e=>console.error('DATABASE SAVE FAILED:',e.message));await saving;return}
+let persistenceLastError = null;
+let persistenceLastSavedAt = null;
+let persistenceReady = false;
+async function persistNow(){const payload=serialize();if(db){saving=saving.then(()=>db.query('INSERT INTO udika_snapshot (id,payload,updated_at) VALUES (1,$1,NOW()) ON CONFLICT (id) DO UPDATE SET payload=$1,updated_at=NOW()', [JSON.stringify(payload)])).then(()=>{persistenceLastError=null;persistenceLastSavedAt=Date.now()}).catch(e=>{persistenceLastError=String(e.message||e);console.error('DATABASE SAVE FAILED:',e.message)});await saving;return}
  try{fs.mkdirSync(path.dirname(DATA_FILE),{recursive:true});fs.writeFileSync(DATA_FILE+'.tmp',JSON.stringify(payload));fs.renameSync(DATA_FILE+'.tmp',DATA_FILE)}catch(e){console.error('FILE SAVE FAILED:',e.message)} }
-function saveSoon(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>persistNow().catch(e=>console.error('SAVE:',e.message)),350)}
+function saveSoon(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>persistNow().catch(e=>console.error('SAVE:',e.message)),150)}
 function restore(list){for(const item of list){if(!item.pin||!item.hostKey)continue;const r={...item,mcUser:item.mcUser||'',mcPassword:item.mcPassword||null,mcVersion:item.mcVersion||'',bank:normalizeBank(item.bank),players:new Map((item.players||[]).map(p=>[p.id,p])),clients:new Set(),deadlineTimer:null};if(r.phase==='running'){r.phase='reveal';r.endedAt=now()}rooms.set(r.pin,r)}console.log('Restored',rooms.size,'rooms')}
-async function load(){if(db){await db.query('CREATE TABLE IF NOT EXISTS udika_snapshot (id INTEGER PRIMARY KEY, payload JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');let {rows}=await db.query('SELECT payload FROM udika_snapshot WHERE id=1');if(rows.length)restore(rows[0].payload);console.log('PostgreSQL persistence active');return}
- try{restore(JSON.parse(fs.readFileSync(DATA_FILE,'utf8')))}catch(e){if(e.code!=='ENOENT')console.warn('Cannot load:',e.message)}console.warn('WARNING: local file persistence only; Render Free filesystem is ephemeral!')}
+async function load(){if(db){await db.query('CREATE TABLE IF NOT EXISTS udika_snapshot (id INTEGER PRIMARY KEY, payload JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');let {rows}=await db.query('SELECT payload FROM udika_snapshot WHERE id=1');if(rows.length)restore(rows[0].payload);persistenceReady=true;console.log('PostgreSQL persistence active');return}
+ try{restore(JSON.parse(fs.readFileSync(DATA_FILE,'utf8')))}catch(e){if(e.code!=='ENOENT')console.warn('Cannot load:',e.message)}persistenceReady=true;console.warn('WARNING: local file persistence only; Render Free filesystem is ephemeral!')}
 
 function leader(r){return [...r.players.values()].sort((a,b)=>b.score-a.score||b.correct-a.correct||a.totalMs-b.totalMs||a.joinedAt-b.joinedAt).map((p,i)=>({rank:i+1,id:p.id,name:p.name,avatar:p.avatar,score:p.score,correct:p.correct,totalMs:p.totalMs}));}
 function publicQuestion(r){if(r.phase==='idle'||r.phase==='ready'||r.phase==='intermission')return null;const q=r.bank[r.idx];return {index:r.idx+1,total:r.bank.length,stage:q.stage,q:q.q,a:q.a,t:q.t,deadline:r.startedAt+q.t*1000,answer:r.phase==='reveal'||r.phase==='finished'?q.c:null};}
-function publicState(r){const ranks=leader(r);const safeRanks=ranks.map(({id,...p})=>p);const done=r.phase==='finished';return {pin:r.pin,title:r.title,phase:r.phase,idx:r.idx,count:r.players.size,candidates:[...r.players.values()].slice(0,60).map(p=>({name:p.name,avatar:p.avatar})),q:publicQuestion(r),leaderboard:(r.phase==='reveal'||done)?safeRanks.slice(0,20):[],honors:done?safeRanks.slice(0,3).map((p,i)=>({...p,title:['Trạng nguyên','Bảng nhãn','Thám hoa'][i]})):[],time:now(),isFinal:done,completedStage:r.phase==='intermission'?r.completedStage:null,stageWish:r.phase==='intermission'?STAGE_WISHES[r.completedStage]||'Chúc mừng đã hoàn thành chặng thi!':null};}
+function publicState(r){const ranks=leader(r);const safeRanks=ranks.map(({id,...p})=>p);const done=r.phase==='finished';return {pin:r.pin,title:r.title,phase:r.phase,idx:r.idx,count:r.players.size,candidates:[...r.players.values()].slice(0,60).map(p=>({name:p.name,avatar:p.avatar})),q:publicQuestion(r),leaderboard:(['reveal','intermission','finished'].includes(r.phase))?safeRanks.slice(0,20):[],honors:done?safeRanks.slice(0,3).map((p,i)=>({...p,title:['Trạng nguyên','Bảng nhãn','Thám hoa'][i]})):[],time:now(),isFinal:done,completedStage:r.phase==='intermission'?r.completedStage:null,stageWish:r.phase==='intermission'?STAGE_WISHES[r.completedStage]||'Chúc mừng đã hoàn thành chặng thi!':null,stageLeaders:r.phase==='intermission'?safeRanks.slice(0,5):[]};}
 function myState(r,id,finalRanks){const p=r.players.get(id);if(!p)return null;let stage=null;if(r.phase==='intermission'&&r.completedStage!=null){let ix=r.bank.map((q,i)=>q.stage===r.completedStage?i:null).filter(x=>x!==null),n=ix.filter(i=>p.answers[i]?.correct).length;stage={stage:r.completedStage,correct:n,total:ix.length,passed:n>=Math.ceil(ix.length/2)}}return {id:p.id,name:p.name,avatar:p.avatar,score:p.score,correct:p.correct,answer:p.answers[r.idx]||null,passedStage:stage,finalRank:r.phase==='finished'?finalRanks.find(h=>h.id===id)?.rank||null:null}}
 function playerState(r,id){const pub=publicState(r);return {...pub,my:myState(r,id,r.phase==='finished'?leader(r):[])}}
 function hostState(r){return {...publicState(r),bank:r.bank,leaderboard:leader(r),players:[...r.players.values()].map(p=>({name:p.name,id:p.id,avatar:p.avatar,score:p.score,answered:!!p.answers[r.idx]}))};}
 function send(ws,obj){if(ws.closed||!ws.socket.writable)return;try{let data=Buffer.from(JSON.stringify(obj));const h=Buffer.alloc(data.length<=125?2:data.length<=65535?4:10);h[0]=0x81;if(data.length<=125)h[1]=data.length;else if(data.length<=65535){h[1]=126;h.writeUInt16BE(data.length,2)}else{h[1]=127;h.writeBigUInt64BE(BigInt(data.length),2)}ws.socket.write(Buffer.concat([h,data]));}catch(e){ws.socket.destroy()}}
 function broadcast(r){const pub=publicState(r),host=r.clients.size?hostState(r):null,finalRanks=r.phase==='finished'?leader(r):[];for(const ws of r.clients){if(ws.role==='host')send(ws,{type:'state',...host});else if(ws.role==='watch')send(ws,{type:'state',...pub});else send(ws,{type:'state',...pub,my:myState(r,ws.playerId,finalRanks)})}saveSoon();}
 function broadcastPresenceSoon(r){clearTimeout(r.presenceTimer);r.presenceTimer=setTimeout(()=>broadcast(r),250)}
-function closeRound(r){if(r.phase!=='running')return;r.phase='reveal';r.endedAt=now();clearTimeout(r.deadlineTimer);r.deadlineTimer=null;broadcast(r);}
+// V4: after revealing the last question in a stage, open the celebration immediately.
+// This is a server-side state change; LED, host and every player see the same result.
+function ceremonyPhase(r){
+ const last=r.idx===r.bank.length-1;
+ const stageEnded=last||r.bank[r.idx+1].stage!==r.bank[r.idx].stage;
+ if(last){r.phase='finished';r.completedStage=r.bank[r.idx].stage;}
+ else if(stageEnded){r.phase='intermission';r.completedStage=r.bank[r.idx].stage;}
+ else r.phase='reveal';
+}
+function closeRound(r){
+ if(!['running','reveal'].includes(r.phase))return;
+ if(r.phase==='running'){r.endedAt=now();clearTimeout(r.deadlineTimer);r.deadlineTimer=null;}
+ ceremonyPhase(r);broadcast(r);
+}
+function timeoutRound(r){if(r.phase!=='running')return;r.phase='reveal';r.endedAt=now();clearTimeout(r.deadlineTimer);r.deadlineTimer=null;broadcast(r)}
 function err(ws,e){send(ws,{type:'error',message:String(e.message||e)});}
 function authHost(ws,msg){const r=rooms.get(String(msg.pin||''));if(!r||!ws.session||!(ws.session.role==='admin'||(ws.session.role==='mc'&&ws.session.pin===r.pin&&ws.session.user===r.mcUser&&ws.session.mcVersion===r.mcVersion)))throw Error('MC chưa đăng nhập hoặc không có quyền điều khiển phòng');if(ws.room)ws.room.clients.delete(ws);ws.role='host';ws.room=r;ws.playerId=null;r.clients.add(ws);send(ws,{type:'host_ok',pin:r.pin});broadcast(r)}
 function timingEq(a,b){let x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&crypto.timingSafeEqual(x,y)}
@@ -100,13 +122,14 @@ function onMessage(ws,msg){
    r.bank=normalizeBank(msg.bank);r.idx=0;r.phase='idle';r.startedAt=0;r.endedAt=0;
    for(const p of r.players.values()){p.score=0;p.correct=0;p.totalMs=0;p.answers={}}
  }else if(type==='start'){
-   if(!['idle','ready','intermission'].includes(r.phase))throw Error('Chưa được phép mở câu hỏi tiếp');
+   if(!['idle','ready'].includes(r.phase))throw Error('Trước tiên hãy chuyển chặng bằng nút TIẾP TỤC trên màn MC');
    r.phase='running';r.startedAt=now();r.endedAt=0;const q=r.bank[r.idx];
-   clearTimeout(r.deadlineTimer);r.deadlineTimer=setTimeout(()=>closeRound(r),q.t*1000+15);
+   clearTimeout(r.deadlineTimer);r.deadlineTimer=setTimeout(()=>timeoutRound(r),q.t*1000+15);
  }else if(type==='reveal')closeRound(r);
  else if(type==='next'){
-   if(r.phase!=='reveal')throw Error('Hãy công bố kết quả trước khi sang câu tiếp');
-   if(r.idx===r.bank.length-1)r.phase='finished';else {const prevStage=r.bank[r.idx].stage;r.idx++;r.phase=r.bank[r.idx].stage!==prevStage?'intermission':'ready';r.completedStage=prevStage;r.startedAt=0}
+   if(!['reveal','intermission'].includes(r.phase))throw Error('Hãy công bố đáp án hoặc kết thúc chặng thi trước khi sang câu tiếp');
+   if(r.idx>=r.bank.length-1)throw Error('Khoa thi đã kết thúc và được phong danh');
+   r.idx++;r.phase='ready';r.startedAt=0;r.endedAt=0;
  }else if(type==='reset'){
    clearTimeout(r.deadlineTimer);r.idx=0;r.phase='idle';r.startedAt=0;r.endedAt=0;
    for(const p of r.players.values()){p.score=0;p.correct=0;p.totalMs=0;p.answers={}}
@@ -171,7 +194,7 @@ async function api(req,res,u){
  }catch(e){sendJson(res,400,{error:e.message||'Yêu cầu lỗi'})}
 }
 const server=http.createServer((req,res)=>{
- const u=new URL(req.url,'http://localhost');if(u.pathname.startsWith('/api/'))return api(req,res,u);if(u.pathname==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:true,rooms:rooms.size}));return}
+ const u=new URL(req.url,'http://localhost');if(u.pathname.startsWith('/api/'))return api(req,res,u);if(u.pathname==='/health'){const healthy=persistenceReady&&!persistenceLastError;res.writeHead(healthy?200:503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({ok:healthy,rooms:rooms.size,persistence:{mode:db?'postgresql':'temporary-file',required:REQUIRE_DATABASE,ready:persistenceReady,lastSavedAt:persistenceLastSavedAt,error:persistenceLastError?'Database save failed (check server logs)':null}}));return}
  if(req.method!=='GET'){res.writeHead(405);res.end('Method not allowed');return}
  const name=routes[u.pathname]||u.pathname.replace(/^\//,'');const file=path.resolve(publicDir,name);
  if(!file.startsWith(publicDir+path.sep)){res.writeHead(403);res.end('Forbidden');return}

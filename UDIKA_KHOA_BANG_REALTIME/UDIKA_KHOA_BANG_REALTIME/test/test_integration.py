@@ -66,9 +66,7 @@ try:
     p1.close();time.sleep(.3)
     p1=ws();emit(p1,{'type':'join','pin':a['pin'],'playerId':p1id,'name':'Sĩ tử A'});assert nextmsg(p1,'joined')['playerId']==p1id;rec=nextmsg(p1,'state');assert rec['my']['score']>0 and rec['count']==2
     print('OK reconnect preserves submitted answer and score')
-    emit(mca,{'type':'reveal'});tmp=nextmsg(mca,'state');
-    while tmp['phase']!='reveal':tmp=nextmsg(mca,'state')
-    emit(mca,{'type':'next'});final=nextmsg(mca,'state');
+    emit(mca,{'type':'reveal'});final=nextmsg(mca,'state');
     while final['phase']!='finished':final=nextmsg(mca,'state')
     assert final['phase']=='finished' and final['honors'][0]['name']=='Sĩ tử A' and 'id' not in final['honors'][0]
     assert req('/api/rooms')[0]==403

@@ -1,0 +1,17 @@
+UDIKA – KHOA BẢNG V4 | BẢN SỬA CHÚC MỪNG VÀ VINH DANH
+
+1. Bấm CÔNG BỐ sau câu cuối từng chặng: mở màn CHÚC MỪNG trên LED ngay lập tức.
+2. MC nhấn TIẾP TỤC SANG CHẶNG TIẾP THEO khi muốn bắt đầu câu mới.
+3. Sau câu cuối cùng: CÔNG BỐ -> phong Trạng nguyên / Bảng nhãn / Thám hoa ngay, KHÔNG phải bấm CÂU KẾ TIẾP.
+4. Hết giờ, máy chủ tự khóa đáp án; MC vẫn bấm CÔNG BỐ để hiện nghi lễ.
+5. Ảnh trang trí Vinh Danh được đóng gói trực tiếp trong public/vinh_danh_bg.webp.
+6. Giữ nguyên phần Admin, nhiều MC, phòng thi riêng, khôi phục kết nối và dữ liệu.
+
+HƯỚNG DẪN TRIỂN KHAI AN TOÀN
+- Sao lưu phiên bản GitHub/Render đang chạy, tránh cập nhật khi có người thi.
+- Giải nén và tải *nội dung bên trong* UDIKA_KHOA_BANG_REALTIME lên đúng folder GitHub hiện đang cấu hình Root Directory.
+- Đảm bảo GitHub có server.js, package.json, questions.json và thư mục public ở cùng cấp.
+- Giữ nguyên biến ADMIN_PASSWORD, SESSION_SECRET; không chụp/gửi giá trị bảo mật.
+- Nếu muốn lưu dữ liệu bền vững: cấu hình DATABASE_URL trên PostgreSQL. Không sử dụng Render Free file tạm cho các kỳ thi có giải thưởng.
+- Deploy bản mới, thử 2–3 người chơi, 2 chặng và kiểm tra màn LED, sau đó mới mời cả đoàn.
+- Chưa kiểm thử tải 2.000 thiết bị; cần hệ thống có nhiều instance và database bền vững cho sự kiện lớn.
