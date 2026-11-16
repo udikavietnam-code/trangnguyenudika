@@ -1,0 +1,13 @@
+'use strict';
+const $=id=>document.getElementById(id);
+async function api(url,opt={}){let r=await fetch(url,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...opt});let d;try{d=await r.json()}catch{throw Error('Máy chủ không trả dữ liệu hợp lệ')}if(!r.ok)throw Error(d.error||'Không thực hiện được');return d}
+function show(ok){$('loginView').classList.toggle('hidden',ok);$('dash').classList.toggle('hidden',!ok)}
+function notice(msg,id='roomNotice'){let e=$(id);e.textContent=msg;e.classList.remove('hidden')}
+async function load(){try{let s=await api('/api/session');show(s.user?.role==='admin');if(s.user?.role==='admin')await refresh()}catch{show(false)}}
+async function refresh(){try{let data=await api('/api/rooms');$('roomRows').innerHTML='';for(let r of data.rooms){let tr=document.createElement('tr');for(let value of [r.title,r.pin,r.mcUser,r.count,r.phase]){let td=document.createElement('td');td.textContent=String(value||'—');tr.appendChild(td)}let td=document.createElement('td'),actions=document.createElement('div');actions.className='admin-actions';for(let [label,fn] of [['Mở MC',()=>location.href='/host?pin='+encodeURIComponent(r.pin)],['LED',()=>window.open('/led?pin='+encodeURIComponent(r.pin),'_blank')],['CSV',()=>window.open('/api/rooms/'+r.pin+'/export','_blank')],['Đổi MC',()=>changeMC(r.pin)]]){let b=document.createElement('button');b.className='btn';b.textContent=label;b.onclick=fn;actions.appendChild(b)}td.appendChild(actions);tr.appendChild(td);$('roomRows').appendChild(tr)}$('serverState').textContent='Tổng số phòng: '+data.rooms.length}catch(e){notice(e.message)}}
+async function changeMC(pin){const mcUser=prompt('Tài khoản MC mới cho phòng '+pin+':');if(!mcUser)return;const password=prompt('Mật khẩu MC mới (ít nhất 10 ký tự):');if(!password)return;try{await api('/api/rooms/'+pin+'/mc',{method:'PATCH',body:JSON.stringify({mcUser,password})});notice('Đã cấp quyền mới cho '+mcUser+' tại phòng '+pin);await refresh()}catch(e){notice(e.message)}}
+$('login').onclick=async()=>{try{await api('/api/login',{method:'POST',body:JSON.stringify({role:'admin',password:$('adminPassword').value})});$('adminPassword').value='';show(true);await refresh()}catch(e){notice(e.message,'loginError')}};
+$('createRoom').onclick=async()=>{try{let b={title:$('roomTitle').value.trim(),mcUser:$('mcUser').value.trim(),password:$('mcPassword').value};let d=await api('/api/rooms',{method:'POST',body:JSON.stringify(b)});$('mcPassword').value='';notice('ĐÃ TẠO PHÒNG '+d.pin+' · MC '+d.mcUser+' · Gửi link '+location.origin+'/join?pin='+d.pin);await refresh()}catch(e){notice(e.message)}};
+$('refresh').onclick=refresh;
+$('logout').onclick=async()=>{await api('/api/logout',{method:'POST',body:'{}'});show(false)};
+load();
